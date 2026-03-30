@@ -95,7 +95,8 @@ class HypothesisTree:
         while node.children:
             unexpanded = [c for c in node.children if c.visit_count == 0]
             if unexpanded:
-                return self._rng.choice(unexpanded)
+                # UCB over unexpanded: pick the one added earliest (consistent ordering)
+                return unexpanded[0]
             node = max(
                 node.children,
                 key=lambda c: c.ucb_score(self._total_visits, self.exploration_weight),
@@ -196,7 +197,10 @@ class HypothesisAgent(BaseAgent):
     def _execute(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
         cfg = self._resolve_search_config()
         papers = context.get("papers", [])
-        rng = random.Random(context.get("seed", 42))
+        seed = context.get("seed", 42)
+        if self.config is not None:
+            seed = self.config.seed
+        rng = random.Random(seed)
 
         root_hyp = self._initial_hypothesis(task, papers)
         tree = HypothesisTree(

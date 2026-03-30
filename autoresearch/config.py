@@ -1,9 +1,22 @@
-"""Central configuration for Autoresearch v2."""
+"""
+Central configuration for Autoresearch v2 — SERA Architecture.
+
+Provides typed, validated, serialisable config for every layer of the
+Self-Evolving Research Architecture:
+  - LLM backend (OpenAI / Anthropic / local)
+  - Persistent memory (SQLite / JSON / in-memory)
+  - Agentic tree-search (AI Scientist-v2 style)
+  - Bilevel + CMA-ES hybrid HPO (Centaur style)
+  - AIRS-Bench evaluation metrics
+  - Per-agent self-evolution hyperparameters
+"""
 
 from __future__ import annotations
 
+import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -106,6 +119,41 @@ class AutoresearchConfig:
 
     extra: Dict[str, Any] = field(default_factory=dict)
 
+    # ------------------------------------------------------------------
+    # Validation
+    # ------------------------------------------------------------------
+
+    def validate(self) -> None:
+        """Raise ValueError for any obviously invalid setting."""
+        if not (0.0 <= self.llm.temperature <= 2.0):
+            raise ValueError(f"llm.temperature must be in [0, 2], got {self.llm.temperature}")
+        if self.llm.max_tokens < 1:
+            raise ValueError("llm.max_tokens must be >= 1")
+        if not (0.0 <= self.memory.recycling_threshold <= 1.0):
+            raise ValueError("memory.recycling_threshold must be in [0, 1]")
+        if self.search.branching_factor < 1:
+            raise ValueError("search.branching_factor must be >= 1")
+        if self.search.max_depth < 1:
+            raise ValueError("search.max_depth must be >= 1")
+        if not (0.0 <= self.agent.evolution_lr <= 1.0):
+            raise ValueError("agent.evolution_lr must be in [0, 1]")
+        if self.optimization.batch_size < 1:
+            raise ValueError("optimization.batch_size must be >= 1")
+
+    # ------------------------------------------------------------------
+    # Serialisation
+    # ------------------------------------------------------------------
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    def to_json(self, indent: int = 2) -> str:
+        return json.dumps(self.to_dict(), indent=indent, default=str)
+
+    # ------------------------------------------------------------------
+    # Constructors
+    # ------------------------------------------------------------------
+
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "AutoresearchConfig":
         cfg = cls()
@@ -118,3 +166,13 @@ class AutoresearchConfig:
             elif hasattr(cfg, key):
                 setattr(cfg, key, value)
         return cfg
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "AutoresearchConfig":
+        return cls.from_dict(json.loads(json_str))
+
+    @classmethod
+    def from_file(cls, path: str) -> "AutoresearchConfig":
+        """Load config from a JSON file."""
+        text = Path(path).read_text(encoding="utf-8")
+        return cls.from_json(text)
