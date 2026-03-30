@@ -117,6 +117,9 @@ class AutoresearchConfig:
     verbose: bool = False
     seed: int = 42
 
+    # Search budget (Karpathy: fixed time budget per run)
+    search_budget_seconds: float = 300.0   # 5 minutes default
+
     extra: Dict[str, Any] = field(default_factory=dict)
 
     # ------------------------------------------------------------------

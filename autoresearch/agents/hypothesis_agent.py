@@ -197,6 +197,9 @@ class HypothesisAgent(BaseAgent):
     def _execute(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
         cfg = self._resolve_search_config()
         papers = context.get("papers", [])
+        # Also accept "learnings" as paper-like context
+        for l in context.get("learnings", []):
+            papers.append({"title": l, "abstract": l})
         seed = context.get("seed", 42)
         if self.config is not None:
             seed = self.config.seed
@@ -223,10 +226,12 @@ class HypothesisAgent(BaseAgent):
             tree.prune()
 
         best = tree.best_hypotheses(top_k=cfg["top_k"])
+        best_dicts = [n.to_dict() for n in best]
         return {
             "task": task,
             "root_hypothesis": root_hyp,
-            "best_hypotheses": [n.to_dict() for n in best],
+            "hypotheses": best_dicts,           # orchestrator reads this key
+            "best_hypotheses": best_dicts,      # legacy key
             "total_nodes_explored": tree.total_nodes,
             "tree_depth_reached": max((n.depth for n in tree._all_nodes.values()), default=0),
         }

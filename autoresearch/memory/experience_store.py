@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sqlite3
 import time
 import uuid
@@ -112,7 +113,13 @@ class ExperienceStore:
     """
 
     def __init__(self, db_path: str = "autoresearch_memory.db") -> None:
-        self.db_path = Path(db_path)
+        self.db_path = db_path
+        # For in-memory databases, keep a single persistent connection
+        # (each new sqlite3.connect(":memory:") creates an independent DB)
+        self._mem_conn: Optional[sqlite3.Connection] = None
+        if db_path == ":memory:":
+            self._mem_conn = sqlite3.connect(":memory:", check_same_thread=False)
+            self._mem_conn.row_factory = sqlite3.Row
         self._init_db()
 
     # ------------------------------------------------------------------
@@ -126,16 +133,25 @@ class ExperienceStore:
 
     @contextmanager
     def _connect(self) -> Generator[sqlite3.Connection, None, None]:
-        conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
-        try:
-            yield conn
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
+        if self._mem_conn is not None:
+            # In-memory: reuse the single persistent connection
+            try:
+                yield self._mem_conn
+                self._mem_conn.commit()
+            except Exception:
+                self._mem_conn.rollback()
+                raise
+        else:
+            conn = sqlite3.connect(str(self.db_path))
+            conn.row_factory = sqlite3.Row
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
 
     # ------------------------------------------------------------------
     # Round lifecycle
@@ -178,18 +194,27 @@ class ExperienceStore:
 
     def save_agent_state(self, round_id: str, state: Any) -> None:
         """Persist an AgentState from base_agent.py."""
+        # Safely convert AgentStatus enum to string
+        raw_status = getattr(state, "status", None)
+        if raw_status is None:
+            status_str = "unknown"
+        elif hasattr(raw_status, "name"):
+            status_str = raw_status.name
+        else:
+            status_str = str(raw_status)
+
         with self._connect() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO agent_states VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     str(uuid.uuid4()),
                     round_id,
-                    getattr(state, "agent_class", "unknown"),
+                    getattr(state, "agent_class", type(state).__name__),
                     getattr(state, "agent_id", ""),
                     getattr(state, "round_number", 0),
-                    getattr(state, "score", 0.0),
-                    getattr(state, "status", AgentStatusStr(state)),
-                    getattr(state, "elapsed_seconds", 0.0),
+                    float(getattr(state, "score", 0.0)),
+                    status_str,
+                    float(getattr(state, "elapsed_seconds", 0.0)),
                     json.dumps(getattr(state, "parameters", {}), default=str),
                     json.dumps(getattr(state, "result", {}), default=str)[:4096],
                     time.time(),
@@ -346,11 +371,8 @@ class ExperienceStore:
             "average_score": round(avg_score, 3),
             "total_skills": total_skills,
             "total_learnings": total_learnings,
-            "db_path": str(self.db_path),
+            "db_path": self.db_path,
         }
-
-
-import re  # noqa: E402 (needed at module level for search_learnings)
 
 
 def AgentStatusStr(state: Any) -> str:

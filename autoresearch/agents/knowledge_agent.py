@@ -46,12 +46,22 @@ class KnowledgeAgent(BaseAgent):
         }
 
     def _execute(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        hypotheses: List[Dict[str, Any]] = context.get("best_hypotheses", [])
-        papers: List[Dict[str, Any]] = context.get("papers", [])
+        # Accept both "hypotheses" (orchestrator) and "best_hypotheses" (legacy)
+        hypotheses: List[Any] = (
+            context.get("hypotheses") or context.get("best_hypotheses") or []
+        )
+        # Accept both "learnings" (orchestrator) and "papers" (legacy)
+        papers_raw: List[Any] = context.get("papers") or []
+        learnings:  List[str] = context.get("learnings") or []
+
+        # Convert learnings to paper-like dicts for _check_grounding
+        papers: List[Dict[str, Any]] = list(papers_raw)
+        for l in learnings:
+            papers.append({"title": l, "abstract": l, "key_findings": []})
 
         results: List[Dict[str, Any]] = []
         for hyp in hypotheses:
-            text = hyp.get("hypothesis", "")
+            text = hyp.get("hypothesis", "") if isinstance(hyp, dict) else str(hyp)
             novelty = self._check_novelty(text, papers)
             grounding = self._check_grounding(text, papers)
             consistency = self._check_consistency(text, task)
@@ -91,7 +101,8 @@ class KnowledgeAgent(BaseAgent):
         return {
             "task": task,
             "evaluated": results,
-            "accepted_hypotheses": accepted,
+            "validated_hypotheses": accepted,    # orchestrator reads this key
+            "accepted_hypotheses": accepted,     # legacy key
             "acceptance_rate": len(accepted) / max(len(results), 1),
         }
 
@@ -173,4 +184,10 @@ class KnowledgeAgent(BaseAgent):
         self._seen_fingerprints.clear()
 
     def _score_result(self, result: Any) -> float:
-        return result.get("acceptance_rate", 0.0)
+        if not isinstance(result, dict):
+            return 0.0
+        rate = result.get("acceptance_rate", 0.0)
+        n = len(result.get("evaluated", []))
+        if n == 0:
+            return 0.5   # no hypotheses to score — neutral
+        return rate

@@ -28,3 +28,5 @@
 | Round | Agent | Score | Notes |
 |-------|-------|-------|-------|
 | — | — | — | Baseline |
+
+<!-- MetaAgent appends "## Round N Update" sections here each round -->

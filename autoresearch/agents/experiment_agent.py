@@ -120,7 +120,10 @@ class ExperimentAgent(BaseAgent):
         }
 
     def _execute(self, task: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        accepted: List[Dict[str, Any]] = context.get("accepted_hypotheses", [])
+        # Accept accepted_hypotheses (orchestrator) or hypotheses (raw)
+        accepted: List[Any] = (
+            context.get("accepted_hypotheses") or context.get("hypotheses") or []
+        )
         papers: List[Dict[str, Any]] = context.get("papers", [])
         max_exp: int = self._parameters.get("max_experiments_per_round", 3)
 
@@ -128,7 +131,10 @@ class ExperimentAgent(BaseAgent):
         results: List[ExperimentResult] = []
 
         for hyp_data in accepted[:max_exp]:
-            hyp_text = hyp_data.get("hypothesis", "")
+            if isinstance(hyp_data, dict):
+                hyp_text = hyp_data.get("hypothesis", "") or hyp_data.get("text", str(hyp_data))
+            else:
+                hyp_text = str(hyp_data)
             plan = self._design_experiment(hyp_text, task, papers)
             plans.append(plan)
             result = self._execute_experiment(plan)
@@ -256,8 +262,13 @@ class ExperimentAgent(BaseAgent):
         )
 
     def _score_result(self, result: Any) -> float:
-        if result.get("successful_count", 0) == 0:
+        if not isinstance(result, dict):
             return 0.0
+        n_planned = len(result.get("experiment_plans", []))
+        if n_planned == 0:
+            return 0.5   # no experiments to run — neutral
+        if result.get("successful_count", 0) == 0:
+            return 0.1
         return (result.get("avg_correctness", 0.0) + result.get("avg_reproducibility", 0.0)) / 2.0
 
     @property
