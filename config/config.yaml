@@ -93,12 +93,32 @@ memory:
   trajectory_log_path: "memory/trajectories/"
   cross_run_memory: true   # carry blackboard state across runs
 
-# ─── Literature Search ───────────────────────────────────────────────── #
-literature:
-  max_papers_per_query: 20
-  prefer_semantic_scholar: true
-  fallback_to_arxiv: true
-  # S2_API_KEY read from environment
+# ─── Tavily Search ───────────────────────────────────────────────────── #
+# Primary search backend for papers AND GitHub repos.
+# Multi-key pool with automatic rotation on quota exhaustion / rate limits.
+#
+# Keys are read from environment variables (preferred) OR this list.
+# Environment variables take priority:
+#   TAVILY_API_KEY          — primary key
+#   TAVILY_API_KEY_2        — second key  (auto-rotated when key 1 is exhausted)
+#   TAVILY_API_KEY_3        — third key   (…and so on, up to TAVILY_API_KEY_20)
+#
+# To add keys only in config (not env), list them below:
+tavily:
+  api_keys: []            # e.g. ["tvly-key1", "tvly-key2"]
+  search_depth: "advanced"
+  papers_domains:
+    - arxiv.org
+    - semanticscholar.org
+    - paperswithcode.com
+    - openreview.net
+    - proceedings.mlr.press
+    - proceedings.neurips.cc
+  github_domains:
+    - github.com
+  year_from: 2024         # filter papers to 2024+ by default
+  max_papers: 20
+  max_github_repos: 10
 
 # ─── Output ──────────────────────────────────────────────────────────── #
 output:

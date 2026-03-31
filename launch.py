@@ -107,6 +107,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run pipeline with dummy LLM (no API calls) for testing",
     )
+    parser.add_argument(
+        "--tavily-keys",
+        type=str,
+        default=None,
+        help="Comma-separated Tavily API keys (supplements env TAVILY_API_KEY[_N])",
+    )
     return parser.parse_args()
 
 
@@ -223,6 +229,22 @@ def main() -> None:
         bfts_cfg.num_seeds = 2
         bfts_cfg.max_nodes = 6
 
+    # Collect Tavily keys: env vars + --tavily-keys CLI + config file
+    tavily_keys: list[str] = []
+    if args.tavily_keys:
+        tavily_keys.extend(k.strip() for k in args.tavily_keys.split(",") if k.strip())
+
+    # Also read from config.yaml if present
+    config_path = Path(args.config)
+    if config_path.exists():
+        try:
+            import yaml
+            with open(config_path) as f:
+                cfg = yaml.safe_load(f) or {}
+            tavily_keys.extend(cfg.get("tavily", {}).get("api_keys", []))
+        except Exception as exc:
+            logger.debug("Could not load config.yaml for Tavily keys: %s", exc)
+
     orchestrator = Orchestrator(
         blackboard=bb,
         tom_engine=tom,
@@ -230,6 +252,7 @@ def main() -> None:
         bfts_config=bfts_cfg,
         loop_config=LoopConfig(),
         output_dir=output_dir,
+        tavily_keys=tavily_keys or None,
     )
 
     result_dir = orchestrator.run(

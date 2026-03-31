@@ -56,6 +56,7 @@ class Orchestrator:
         bfts_config: BFTSConfig | None = None,
         loop_config: LoopConfig | None = None,
         output_dir: Path | None = None,
+        tavily_keys: list[str] | None = None,
     ) -> None:
         self._bb = blackboard
         self._tom = tom_engine
@@ -64,6 +65,7 @@ class Orchestrator:
         self._loop_cfg = loop_config or LoopConfig()
         self._output_dir = output_dir or Path("experiments/default_run")
         self._output_dir.mkdir(parents=True, exist_ok=True)
+        self._tavily_keys = tavily_keys
 
         # Instantiate all agents
         self._hypothesis_agent = HypothesisAgent(
@@ -73,7 +75,10 @@ class Orchestrator:
             blackboard=blackboard, tom_engine=tom_engine, llm_fn=llm_fn
         )
         self._literature_agent = LiteratureAgent(
-            blackboard=blackboard, tom_engine=tom_engine, llm_fn=llm_fn
+            blackboard=blackboard,
+            tom_engine=tom_engine,
+            llm_fn=llm_fn,
+            tavily_keys=tavily_keys,
         )
         self._writer_agent = WriterAgent(
             blackboard=blackboard, tom_engine=tom_engine, llm_fn=llm_fn
