@@ -120,6 +120,46 @@ tavily:
   max_papers: 20
   max_github_repos: 10
 
+# ─── HyperAgent (FSoft-AI4Code/HyperAgent) ───────────────────────────── #
+# 4-sub-agent pipeline (Planner → Navigator → Code Editor → Executor)
+# used by ExperimentAgent for repo-level hypothesis evaluation.
+# Requires: pip install hyperagent  (and Zoekt + Go for full functionality)
+# Falls back to a bash-only mini-SWE-agent-inspired executor if not installed.
+hyperagent:
+  mode: "auto"              # "auto" | "patch" | "predict" | "bash"
+  language: "python"        # "python" | "java"
+  clone_dir: "workspaces/repos"
+  nav_model: "claude-3-haiku-20240307"    # Navigator sub-agent (fast, cheap)
+  edit_model: "claude-3-5-sonnet-20240620" # Code Editor sub-agent
+  plan_model: "gpt-4o"                    # Planner sub-agent
+  exec_timeout: 300
+  api_key_env: "ANTHROPIC_API_KEY"
+
+# ─── HyperOptimizer (Meta HyperAgents meta-optimization) ─────────────── #
+# Meta-level optimizer that evolves optimizer strategies themselves.
+# Sits above GEPA and selects / evolves the best optimization recipe
+# (GEPA / TextGrad / AFlow / MIPRO / EvoPrompt or a novel hybrid) for each
+# task type.  Inspired by: ai.meta.com/research/publications/hyperagents/
+# and AgentAugi (tymines/AgentAugi) HyperAgents module.
+hyper_optimizer:
+  population_size: 6           # number of optimizer strategies in population
+  max_generations: 30          # upper bound on meta-evolution generations
+  evolve_every_n_runs: 5       # trigger meta-evolution after this many runs
+  persist_path: "memory/hyper_optimizer_state.json"
+  rng_seed: null               # set to int for reproducible experiments
+
+# ─── GitHub Explorer ("start from existing work") ─────────────────────── #
+# Discovers, ranks, and shallow-clones the best GitHub repos as starting
+# points for hypothesis implementation — implementing the core design
+# principle: "use existing work as a starting point, not a blank slate".
+tools:
+  github_explorer:
+    top_k: 3                   # repos to deeply analyse per search
+    min_stars: 50              # minimum star count to consider
+    prefer_language: "python"
+    clone_dir: "workspaces/github_explorer"
+    github_token_env: "GITHUB_TOKEN"   # optional PAT for higher rate limits
+
 # ─── Output ──────────────────────────────────────────────────────────── #
 output:
   base_dir: "experiments"

@@ -12,6 +12,12 @@ Each phase wraps GEPAOptimizer with a phase-appropriate:
   - evaluator function  (how to measure quality of this artifact type)
   - constraint function (what must remain true after evolution)
 
+HyperOptimizer integration:
+  Before each evolution run, SkillEvolver consults HyperOptimizer to select
+  the best optimization strategy for the current task type.  After the run it
+  records the observed improvement so HyperOptimizer can learn which strategy
+  works best for which phase.
+
 The SkillEvolver is triggered by the Orchestrator after each run when Self-ToM
 reports repeated failures on a specific subtask (failure_count ≥ 3).
 """
@@ -23,6 +29,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from evolution.gepa_optimizer import GEPAOptimizer, GEPAConfig, Candidate
+from evolution.hyper_optimizer import HyperOptimizer
 from memory.skill_store import SkillStore
 from memory.trajectory_log import TrajectoryLog
 
@@ -55,6 +62,7 @@ class SkillEvolver:
         llm_fn: Callable[[str], str],
         gepa_config: GEPAConfig | None = None,
         output_dir: Path | None = None,
+        hyper_optimizer: HyperOptimizer | None = None,
     ) -> None:
         self._store = skill_store
         self._log = trajectory_log
@@ -62,6 +70,7 @@ class SkillEvolver:
         self._cfg = gepa_config or GEPAConfig()
         self._output_dir = output_dir or Path("experiments/evolution")
         self._output_dir.mkdir(parents=True, exist_ok=True)
+        self._hyper_opt = hyper_optimizer
 
     # ------------------------------------------------------------------ #
     #  Public API                                                           #
@@ -100,19 +109,46 @@ class SkillEvolver:
             name, artifact_type, len(eval_dataset),
         )
 
+        # ── HyperOptimizer: select the best strategy for this task type ── #
+        strategy = None
+        if self._hyper_opt is not None:
+            strategy = self._hyper_opt.select_strategy(task_type=artifact_type)
+            # Override GEPAConfig with HyperOptimizer-selected hyperparameters
+            gepa_kwargs = self._hyper_opt.to_gepa_config(strategy)
+            effective_cfg = GEPAConfig(
+                max_generations=gepa_kwargs.get("max_generations", self._cfg.max_generations),
+                population_size=gepa_kwargs.get("population_size", self._cfg.population_size),
+                mutation_temperature=gepa_kwargs.get("mutation_temperature", self._cfg.mutation_temperature),
+                pareto_selection=gepa_kwargs.get("pareto_selection", self._cfg.pareto_selection),
+                max_metric_calls=gepa_kwargs.get("max_metric_calls", self._cfg.max_metric_calls),
+                phase1_skills=gepa_kwargs.get("phase1_skills", self._cfg.phase1_skills),
+                phase2_tools=gepa_kwargs.get("phase2_tools", self._cfg.phase2_tools),
+                phase3_prompts=gepa_kwargs.get("phase3_prompts", self._cfg.phase3_prompts),
+                phase4_code=gepa_kwargs.get("phase4_code", self._cfg.phase4_code),
+            )
+            logger.info(
+                "SkillEvolver: HyperOptimizer selected strategy=%s alg=%s",
+                strategy.strategy_id, strategy.algorithm.value,
+            )
+        else:
+            effective_cfg = self._cfg
+
         # Build appropriate evaluator for this phase
         evaluator = self._build_evaluator(artifact_type, eval_dataset, agent_fn)
 
         # Build appropriate constraint checker for this phase
         constraint = self._build_constraint(artifact_type, seed)
 
+        seed_metric_before = 0.0
         optimizer = GEPAOptimizer(
-            config=self._cfg,
+            config=effective_cfg,
             llm_fn=self._llm,
             evaluator_fn=evaluator,
             constraint_fn=constraint,
             persist_path=self._output_dir / f"gepa_{name}.json",
         )
+        if optimizer._population:
+            seed_metric_before = optimizer._population[0].metric
 
         best = optimizer.optimize(seed, artifact_type=artifact_type)
 
@@ -126,12 +162,19 @@ class SkillEvolver:
             tags=["gepa", artifact_type],
         )
 
+        improvement = best.metric - seed_metric_before
         logger.info(
-            "SkillEvolver: evolved %r — metric %.4f → %.4f",
-            name,
-            optimizer._population[0].metric if optimizer._population else 0.0,
-            best.metric,
+            "SkillEvolver: evolved %r — metric %.4f → %.4f (Δ=%.4f)",
+            name, seed_metric_before, best.metric, improvement,
         )
+
+        # ── HyperOptimizer: record fitness from this run ──────────────── #
+        if self._hyper_opt is not None and strategy is not None:
+            self._hyper_opt.record_fitness(
+                strategy,
+                improvement=improvement,
+                task_type=artifact_type,
+            )
 
         # Log the evolution event
         self._log.log_event(

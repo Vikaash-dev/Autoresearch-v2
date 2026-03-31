@@ -349,8 +349,6 @@ class HyperOptimizer:
             s for s in self._population
             if not s.task_types or TaskType(task_type) in s.task_types
         ] or self._population
-
-        # Rank by task-specific fitness, break ties by mean fitness
         ranked = sorted(
             candidates,
             key=lambda s: (

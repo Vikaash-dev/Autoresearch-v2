@@ -1,5 +1,6 @@
 # Autoresearch-v2 dependencies
-# Synthesised from AI-Scientist v2, hermes-agent, GEPA, and Honcho requirements
+# Synthesised from AI-Scientist v2, hermes-agent, GEPA, Honcho, AgentAugi, and
+# FSoft-AI4Code/HyperAgent requirements.
 
 # ── Core ML ──────────────────────────────────────────────────────────── #
 torch>=2.2.0
@@ -35,6 +36,27 @@ typer>=0.12.0            # CLI (alternative to argparse for extensions)
 #   conda install anaconda::poppler
 #   conda install conda-forge::chktex
 pylatex>=1.4.2           # Python LaTeX wrapper
+
+# ── Optional: FSoft-AI4Code/HyperAgent ───────────────────────────────── #
+# Full HyperAgent (Planner/Navigator/Code Editor/Executor) requires Zoekt+Go.
+# See: https://github.com/FSoft-AI4Code/HyperAgent
+# If not installed, agents/hyperagent_client.py uses the bash fallback.
+#
+# To install (after setting up Zoekt):
+#   pip install hyperagent
+#
+# hyperagent>=0.1.0  # uncomment when ready
+
+# ── Optional: AgentAugi / EvoAgentX ──────────────────────────────────── #
+# AgentAugi (tymines/AgentAugi) provides the HyperAgents meta-optimization
+# module, MASTER MCTS, JitRL, EvoSkill, Tool-MAD, and Plan Caching.
+# The HyperOptimizer in evolution/hyper_optimizer.py implements the core
+# HyperAgents algorithm directly without requiring the full package.
+#
+# For AgentAugi's other modules:
+#   pip install git+https://github.com/tymines/AgentAugi.git
+#
+# agentaugi>=0.1.0  # uncomment for full AgentAugi integration
 
 # ── Testing ───────────────────────────────────────────────────────────── #
 pytest>=8.1.0
