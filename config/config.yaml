@@ -1,0 +1,108 @@
+# BFTS and agent configuration for Autoresearch-v2
+# Mirrors SakanaAI/AI-Scientist v2 bfts_config.yaml, extended with
+# self-evolution and Theory of Mind parameters.
+
+# ─── Tree Search ──────────────────────────────────────────────────────── #
+bfts:
+  num_workers: 4           # parallel expansion workers
+  num_seeds: 3             # independent root nodes (Stage 1 drafts)
+  max_nodes: 50            # hard cap on total nodes
+  max_depth: 8             # tree depth before forcing writeup
+  exploration_weight: 1.41 # UCB exploration constant
+  prune_threshold: 0.0     # prune nodes below this metric
+  debug_prob: 0.5          # probability of debug vs prune on failure
+  max_debug_depth: 3       # max retries per failing node
+  stages:
+    stage1_max_iters: 20
+    stage2_max_iters: 12
+    stage3_max_iters: 12
+    stage4_max_iters: 18
+
+# ─── Core Loop ───────────────────────────────────────────────────────── #
+loop:
+  max_iterations: 50
+  time_budget_seconds: 3600   # 1 hour
+  min_improvement_delta: 0.001
+  patience: 10
+  debug_on_fail: true
+  max_debug_depth: 3
+  debug_prob: 0.5
+
+# ─── Experiment Execution ────────────────────────────────────────────── #
+exec:
+  timeout: 300              # 5 minutes per experiment (karpathy: 5 min budget)
+  work_dir: "workspaces"
+
+# ─── LLM Models ──────────────────────────────────────────────────────── #
+models:
+  experiment:
+    provider: "openai"
+    model: "gpt-4o"         # Fast model for code generation
+    temperature: 1.0
+    max_tokens: 12000
+  hypothesis:
+    provider: "openai"
+    model: "gpt-4o"
+    temperature: 0.9
+  writeup:
+    provider: "openai"
+    model: "o1-preview-2024-09-12"   # Powerful model for writing
+    temperature: 1.0
+  review:
+    provider: "anthropic"
+    model: "claude-opus-4"           # Different family from writer = honest review
+    temperature: 0.5
+  evolution:
+    provider: "openai"
+    model: "gpt-5"                   # Reflection-capable model for GEPA
+    temperature: 0.9
+  literature:
+    provider: "openai"
+    model: "gpt-4o-mini"
+    temperature: 0.3
+
+# ─── Theory of Mind ──────────────────────────────────────────────────── #
+tom:
+  persist_path: "memory/tom_state.json"
+  reviewer_venue: "NeurIPS"
+  enable_community_tom: true
+  enable_self_tom: true
+  self_analysis_interval: 10   # analyze self every N iterations
+
+# ─── GEPA Self-Evolution ─────────────────────────────────────────────── #
+gepa:
+  max_generations: 20
+  population_size: 8
+  max_metric_calls: 150
+  mutation_temperature: 0.9
+  pareto_selection: true
+  min_improvement_delta: 0.01
+  max_artifact_chars: 15000
+  require_tests_pass: true
+  semantic_preservation: true
+  # Phase targets (hermes-agent-self-evolution phases)
+  phase1_skills: true      # Evolve skill SKILL.md files
+  phase2_tools: false      # Evolve tool descriptions (planned)
+  phase3_prompts: false    # Evolve system prompts (planned)
+  phase4_code: false       # Evolve tool implementation code (planned)
+
+# ─── Memory / Persistence ────────────────────────────────────────────── #
+memory:
+  blackboard_path: "memory/blackboard.json"
+  skill_store_path: "memory/skills/"
+  trajectory_log_path: "memory/trajectories/"
+  cross_run_memory: true   # carry blackboard state across runs
+
+# ─── Literature Search ───────────────────────────────────────────────── #
+literature:
+  max_papers_per_query: 20
+  prefer_semantic_scholar: true
+  fallback_to_arxiv: true
+  # S2_API_KEY read from environment
+
+# ─── Output ──────────────────────────────────────────────────────────── #
+output:
+  base_dir: "experiments"
+  writeup_type: "icbinb"   # icbinb (4-page) | icml (8-page)
+  generate_pdf: true
+  save_tree_viz: true

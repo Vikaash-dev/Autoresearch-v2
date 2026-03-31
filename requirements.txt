@@ -1,0 +1,40 @@
+# Autoresearch-v2 dependencies
+# Synthesised from AI-Scientist v2, hermes-agent, GEPA, and Honcho requirements
+
+# ── Core ML ──────────────────────────────────────────────────────────── #
+torch>=2.2.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+
+# ── LLM providers ────────────────────────────────────────────────────── #
+openai>=1.30.0
+anthropic>=0.25.0
+dspy-ai>=2.5.0          # DSPy for declarative LLM pipelines (used with GEPA)
+gepa>=0.4.0             # Genetic-Pareto evolutionary optimizer (ICLR 2026 Oral)
+
+# ── Memory / User modeling ────────────────────────────────────────────── #
+honcho-ai>=3.0.0        # Dialectic user modeling (plastic-labs, Pareto frontier of agent memory)
+
+# ── Search and literature ─────────────────────────────────────────────── #
+requests>=2.31.0
+semanticscholar>=0.7.0
+
+# ── Config and serialization ─────────────────────────────────────────── #
+pyyaml>=6.0.1
+pydantic>=2.6.0
+python-dotenv>=1.0.0
+
+# ── Utilities ────────────────────────────────────────────────────────── #
+tqdm>=4.66.0
+rich>=13.7.0             # Terminal output (hermes-agent TUI style)
+typer>=0.12.0            # CLI (alternative to argparse for extensions)
+
+# ── LaTeX / PDF generation ────────────────────────────────────────────── #
+# Install separately via conda:
+#   conda install anaconda::poppler
+#   conda install conda-forge::chktex
+pylatex>=1.4.2           # Python LaTeX wrapper
+
+# ── Testing ───────────────────────────────────────────────────────────── #
+pytest>=8.1.0
+pytest-cov>=5.0.0
