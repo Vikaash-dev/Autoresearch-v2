@@ -149,22 +149,111 @@ def load_idea(args: argparse.Namespace) -> dict:
 def build_llm_fn(model: str, dry_run: bool = False):
     """Build an LLM callable from model name."""
     if dry_run:
-        logger.info("Dry run: using dummy LLM (no API calls)")
-        def dummy_llm(prompt: str) -> str:
-            return json.dumps({
-                "hypothesis": "Test hypothesis",
-                "novelty_argument": "Novel",
-                "test_procedure": "Run experiment",
-                "expected_outcome": "Better metric",
-                "stated_goal": "Improve performance",
-                "implicit_goal": "Publish at venue",
-                "implicit_constraints": [],
-                "implicit_audience": "ML researchers",
-                "time_horizon": "hours",
-                "success_criteria": ["metric > 0.8"],
-                "likely_pitfalls": [],
-            })
-        return dummy_llm
+        logger.info("Dry run: using context-aware stub LLM (no API calls)")
+
+        def _dry_run_llm(prompt: str) -> str:
+            """
+            Return a contextually appropriate stub response based on the prompt.
+            Each agent type asks structurally different questions — detect them by
+            keywords so the pipeline flows end-to-end without any real LLM calls.
+            """
+            p = prompt.lower()
+
+            # HypothesisAgent: expand() or act() asking for hypotheses
+            if "hypothesis" in p or "novel" in p or "falsifiable" in p:
+                return json.dumps([
+                    {
+                        "hypothesis": "Reduce attention complexity from O(n²) to O(n log n) via sparse patterns",
+                        "code_patch_description": "Replace dense attention with sparse block-diagonal variant",
+                        "expected_improvement": "15% speedup on sequences >512 tokens",
+                    },
+                    {
+                        "hypothesis": "Layer-norm placement before residual connection improves gradient flow",
+                        "code_patch_description": "Move LayerNorm before the residual add in each transformer block",
+                        "expected_improvement": "0.5–1% validation accuracy gain",
+                    },
+                    {
+                        "hypothesis": "Mixed-precision training with dynamic loss scaling reduces memory by 40%",
+                        "code_patch_description": "Wrap model with torch.cuda.amp.autocast and GradScaler",
+                        "expected_improvement": "40% memory reduction, 20% throughput gain",
+                    },
+                ])
+
+            # TheoryOfMindEngine: infer_user_intent
+            if "decompose" in p or "implicit_goal" in p or "success_criteria" in p:
+                return json.dumps({
+                    "stated_goal": "Improve model performance",
+                    "implicit_goal": "Achieve a publishable improvement over baseline",
+                    "implicit_constraints": ["limited GPU budget", "must complete in one session"],
+                    "implicit_audience": "ML conference reviewers",
+                    "time_horizon": "hours",
+                    "success_criteria": ["metric improves by > 1%", "experiment reproduces"],
+                    "likely_pitfalls": ["overfitting on small dataset", "evaluation data leakage"],
+                })
+
+            # TheoryOfMindEngine: update_user_model
+            if "research_style" in p or "trust_level" in p or "depth_preference" in p:
+                return json.dumps({
+                    "research_style": "rigorous",
+                    "depth_preference": "deep",
+                    "domain_vocabulary": ["transformer", "attention", "fine-tuning"],
+                    "trust_level": 0.7,
+                    "preferred_output_format": "icbinb",
+                    "known_dislikes": ["overclaiming", "missing baselines"],
+                    "session_history_summary": "Focused on efficiency improvements for transformers.",
+                })
+
+            # TheoryOfMindEngine: build_reviewer_model / community_model
+            if "hot_topics" in p or "pet_peeves" in p or "reviewer" in p:
+                return json.dumps({
+                    "hot_topics": ["scaling laws", "emergent abilities", "efficiency"],
+                    "pet_peeves": ["overclaiming", "missing ablations", "weak baselines"],
+                    "required_sections": ["abstract", "introduction", "related_work",
+                                          "method", "experiments", "conclusion"],
+                    "likely_rejection_reasons": ["incremental over prior work", "missing baselines"],
+                })
+
+            # TheoryOfMindEngine: update_community_model
+            if "consensus_beliefs" in p or "active_debate" in p or "open_problems" in p:
+                return json.dumps({
+                    "consensus_beliefs": ["larger models generally perform better"],
+                    "active_debates": ["whether scale alone is sufficient for reasoning"],
+                    "open_problems": ["efficient long-context modeling", "compositional generalization"],
+                    "recent_pivots": ["shift from supervised to RLHF-based training"],
+                    "overcrowded_areas": ["LoRA variants", "instruction tuning"],
+                    "high_impact_areas": ["long-context efficiency", "multi-modal reasoning"],
+                })
+
+            # TheoryOfMindEngine: analyze_self / predict_review
+            if "predict" in p and "review" in p:
+                return json.dumps({
+                    "technical_score": 6,
+                    "novelty_score": 7,
+                    "predicted_score": 6,
+                    "accept_probability": 0.45,
+                    "would_accept": False,
+                    "major_concerns": ["missing comparison to recent baselines"],
+                    "required_changes": ["add ablation on dataset size", "report variance across seeds"],
+                    "strengths": ["clear motivation", "well-structured experiments"],
+                    "reasoning": "Solid work but needs stronger empirical evaluation.",
+                })
+
+            # LiteratureAgent: summarize_for_hypothesis
+            if "open problems" in p or "overcrowded" in p or "under-explored" in p:
+                return (
+                    "Open problems: efficient attention for long sequences remains unsolved.\n"
+                    "Overcrowded: standard LoRA variants — avoid.\n"
+                    "Promising: sparse attention + mixture-of-experts combinations.\n"
+                    "Active debate: whether RLHF or DPO generalises better cross-domain."
+                )
+
+            # Default: return a generic helpful string
+            return (
+                "Dry-run response: no real LLM configured. "
+                "Set OPENAI_API_KEY and remove --dry-run to enable real generation."
+            )
+
+        return _dry_run_llm
 
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:

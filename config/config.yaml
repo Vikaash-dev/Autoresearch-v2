@@ -81,10 +81,10 @@ gepa:
   require_tests_pass: true
   semantic_preservation: true
   # Phase targets (hermes-agent-self-evolution phases)
-  phase1_skills: true      # Evolve skill SKILL.md files
-  phase2_tools: false      # Evolve tool descriptions (planned)
-  phase3_prompts: false    # Evolve system prompts (planned)
-  phase4_code: false       # Evolve tool implementation code (planned)
+  phase1_skills: true      # Evolve skill text files (SKILL.md)
+  phase2_tools: true       # Evolve tool descriptions (Tool-ToM metadata)
+  phase3_prompts: true     # Evolve agent system prompts
+  phase4_code: true        # Evolve tool implementation code snippets
 
 # ─── Memory / Persistence ────────────────────────────────────────────── #
 memory:

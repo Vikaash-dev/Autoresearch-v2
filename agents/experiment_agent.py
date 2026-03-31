@@ -13,6 +13,7 @@ Inspired by:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -126,7 +127,7 @@ class ExperimentAgent(BaseAgent):
         )
 
         if self._llm is None:
-            return self._dummy_code(node)
+            return self._dry_run_code(node)
 
         try:
             code = self.call_llm(prompt, system=_EXPERIMENT_SYSTEM)
@@ -140,14 +141,23 @@ class ExperimentAgent(BaseAgent):
             logger.error("Code generation failed: %s", exc)
             return ""
 
-    def _dummy_code(self, node: ExperimentNode) -> str:
-        """Fallback code when no LLM is configured (for testing)."""
-        import random
-        metric = round(random.uniform(0.5, 0.95), 4)
+    def _dry_run_code(self, node: ExperimentNode) -> str:
+        """
+        Deterministic experiment code used when no LLM is configured (dry-run mode).
+
+        The metric is derived from the node ID hash so:
+          - the same node always produces the same metric (reproducible)
+          - different nodes produce different metrics (realistic spread)
+          - no random state, no side effects
+        """
+        # Hash the node_id to get a stable float in [0.50, 0.95]
+        node_hash = int(hashlib.md5(node.node_id.encode()).hexdigest(), 16)
+        metric = round(0.50 + (node_hash % 10_000) / 22_222, 4)  # maps to [0.50, 0.95)
+        hypothesis_safe = node.hypothesis[:60].replace('"', "'")
         return (
-            "import random\n"
-            f"# Hypothesis: {node.hypothesis[:60]}\n"
-            f"metric = {metric}\n"
+            "# Dry-run experiment (no LLM configured)\n"
+            f'# Hypothesis: "{hypothesis_safe}"\n'
+            f"metric = {metric}  # deterministic from node_id hash\n"
             f"print('METRIC:', metric)\n"
         )
 
@@ -208,5 +218,5 @@ class ExperimentAgent(BaseAgent):
                 try:
                     return float(line[len(_METRIC_PARSE_PREFIX):].strip())
                 except ValueError:
-                    pass
+                    continue  # line matched prefix but value is not a float; try the next
         return None
