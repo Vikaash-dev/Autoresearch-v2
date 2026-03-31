@@ -5,7 +5,7 @@ The main entry point. Ties together all 6 layers:
 
   Layer 0 · INTAKE           — parse task, load program.md + strategy.md
   Layer 1 · DEEP SEARCH      — dzhng recursive SERP (breadth/depth)
-  Layer 2 · KNOWLEDGE STORE  — SQLite experience, skills, AgentRxiv learnings
+  Layer 2 · KNOWLEDGE STORE  — SQLite experience + CognitiveMemory (Engram)
   Layer 3 · WORKFORCE        — LiteratureAgent→HypothesisAgent→KnowledgeAgent
                                →ExperimentAgent→WriterAgent→ReviewerAgent
   Layer 4 · SELF-EVOLUTION   — MetaAgent + Bilevel 3-level loop + Centaur HPO
@@ -22,6 +22,7 @@ Inspired by:
   - Sibyl: dual-loop self-evolution (inner=research quality, outer=system)
   - AutoResearchClaw: 23-stage pipeline, MetaClaw cross-run skill injection
   - AIRS-Bench: benchmark evaluation, performance ceiling tracking
+  - autoresearch-engram (tonitangpotato): ACT-R + Hebbian + Ebbinghaus cognitive memory
 """
 
 from __future__ import annotations
@@ -44,6 +45,7 @@ from autoresearch.agents.reviewer_agent import ReviewerAgent
 from autoresearch.agents.meta_agent import MetaAgent
 from autoresearch.pipeline.deep_search import DeepSearchEngine, SearchProvider, LLMProvider
 from autoresearch.memory.experience_store import ExperienceStore
+from autoresearch.memory.cognitive_memory import CognitiveMemory
 from autoresearch.optimization.bilevel import BilevelEngine, BilevelConfig
 from autoresearch.evaluation.benchmark import AIRSBenchEvaluator, BENCHMARK_TASKS
 
@@ -56,18 +58,19 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RoundResult:
-    round_id:     str   = field(default_factory=lambda: str(uuid.uuid4())[:8])
-    round_num:    int   = 0
-    task:         str   = ""
-    learnings:    List[str] = field(default_factory=list)
-    hypotheses:   List[Any] = field(default_factory=list)
-    experiments:  List[Any] = field(default_factory=list)
-    report:       Dict[str, Any] = field(default_factory=dict)
-    review:       Dict[str, Any] = field(default_factory=dict)
-    evolution:    Dict[str, Any] = field(default_factory=dict)
-    score:        float = 0.0
-    elapsed_s:    float = 0.0
-    status:       str   = "completed"
+    round_id:          str   = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    round_num:         int   = 0
+    task:              str   = ""
+    learnings:         List[str] = field(default_factory=list)
+    hypotheses:        List[Any] = field(default_factory=list)
+    experiments:       List[Any] = field(default_factory=list)
+    report:            Dict[str, Any] = field(default_factory=dict)
+    review:            Dict[str, Any] = field(default_factory=dict)
+    evolution:         Dict[str, Any] = field(default_factory=dict)
+    cognitive_context: Dict[str, Any] = field(default_factory=dict)  # Engram recall output
+    score:             float = 0.0
+    elapsed_s:         float = 0.0
+    status:            str   = "completed"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -81,6 +84,7 @@ class RoundResult:
             "elapsed_s":   round(self.elapsed_s, 1),
             "review_decision": self.review.get("accept_decision", ""),
             "evolution_committed": self.evolution.get("evolution_committed", False),
+            "memory_recalled": bool(self.cognitive_context),
         }
 
 
@@ -126,6 +130,9 @@ class ResearchOrchestrator:
         # --- Layer 2: Knowledge Store ---
         self.store = ExperienceStore(db_path=db_path)
 
+        # --- Layer 2b: Cognitive Memory (Engram — ACT-R + Hebbian + Ebbinghaus) ---
+        self.cognitive_memory = CognitiveMemory(db_path=db_path)
+
         # --- Layer 3: Research Workforce ---
         self.literature_agent  = ResearchAgent(config=config)
         self.hypothesis_agent  = HypothesisAgent(config=config)
@@ -169,6 +176,10 @@ class ResearchOrchestrator:
 
         Karpathy pattern: give it a task, go to sleep, wake up to a log of
         experiments and (hopefully) better research than when you started.
+
+        Engram pattern: before each round RECALL what worked/failed; after
+        each round STORE the result; every 10 rounds REFLECT to consolidate
+        patterns into long-lived semantic memories.
         """
         self._start_time = time.time()
         logger.info("=" * 60)
@@ -182,11 +193,19 @@ class ResearchOrchestrator:
             round_start = time.time()
             logger.info("\n--- Round %d/%d ---", round_num + 1, max_rounds)
 
+            # ── Engram RECALL — what worked / failed / patterns ────────
+            cog_ctx = self.cognitive_memory.recall(task)
+            logger.info(
+                "  Memory recall: %d worked, %d failed, %d patterns",
+                len(cog_ctx.what_worked), len(cog_ctx.what_failed), len(cog_ctx.patterns),
+            )
+
             round_rec = self.store.start_round(task, metadata={"round_num": round_num})
             rr = RoundResult(
                 round_id=round_rec.round_id,
                 round_num=round_num,
                 task=task,
+                cognitive_context=cog_ctx.to_dict(),
             )
 
             try:
@@ -196,6 +215,7 @@ class ResearchOrchestrator:
                     prior_learnings=prior_learnings,
                     search_breadth=max(2, search_breadth),
                     search_depth=max(1, search_depth),
+                    cognitive_context=cog_ctx,
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.error("Round %d failed: %s", round_num + 1, exc, exc_info=True)
@@ -214,10 +234,21 @@ class ResearchOrchestrator:
                 )
                 rr.review["airs_bench"] = eval_result.to_dict()
 
-            # Persist round
+            # Persist round (ExperienceStore)
             self.store.finish_round(round_rec.round_id, score=rr.score, status=rr.status)
             self.store.save_learnings(round_rec.round_id, rr.learnings)
             prior_learnings = (prior_learnings + rr.learnings)[-50:]  # rolling window
+
+            # ── Engram STORE — save cognitive memories for this round ──
+            report_summary = rr.report.get("abstract", "") if rr.report else ""
+            self.cognitive_memory.store_experiment(
+                round_id=round_rec.round_id,
+                task=task,
+                score=rr.score,
+                status=rr.status,
+                learnings=rr.learnings,
+                report_summary=str(report_summary)[:200],
+            )
 
             if rr.score > self._best_score:
                 self._best_score = rr.score
@@ -229,8 +260,9 @@ class ResearchOrchestrator:
                 self.on_round_complete(rr)
 
             logger.info(
-                "Round %d complete: score=%.3f best=%.3f elapsed=%.1fs",
+                "Round %d complete: score=%.3f best=%.3f elapsed=%.1fs  memory=%s",
                 round_num + 1, rr.score, self._best_score, rr.elapsed_s,
+                self.cognitive_memory.summary()["total_memories"],
             )
 
             # Early exit on success
@@ -251,10 +283,14 @@ class ResearchOrchestrator:
         prior_learnings: List[str],
         search_breadth: int,
         search_depth: int,
+        cognitive_context: Optional[Any] = None,
     ) -> RoundResult:
 
         # ── Layer 0: load prior skills ─────────────────────────────────
         prior_skills = [s.name for s in self.store.list_skills(min_score=0.6)]
+
+        # Build memory prompt text to inject into agents (Engram pattern)
+        memory_prompt = cognitive_context.to_prompt_text() if cognitive_context else ""
 
         # ── Layer 1: Deep Search ───────────────────────────────────────
         logger.info("Layer 1: Deep Search (breadth=%d, depth=%d)", search_breadth, search_depth)
@@ -270,22 +306,26 @@ class ResearchOrchestrator:
         # ── Layer 3a: Literature Agent ─────────────────────────────────
         lit_state = self.literature_agent.run(task, {
             "search_results": rr.learnings,
-            "prior_skills": prior_skills,
+            "prior_skills":   prior_skills,
+            "memory_context": memory_prompt,
         })
 
         # ── Layer 3b: Hypothesis Agent (MCTS — AI Scientist-v2) ────────
         logger.info("Layer 3b: Hypothesis generation (MCTS)")
         hyp_state = self.hypothesis_agent.run(task, {
-            "learnings": rr.learnings,
-            "prior_context": lit_state.result.get("findings", []) if lit_state.result else [],
+            "learnings":      rr.learnings,
+            "prior_context":  lit_state.result.get("findings", []) if lit_state.result else [],
+            "avoid_themes":   cognitive_context.avoid_tags if cognitive_context else [],
+            "memory_context": memory_prompt,
         })
         rr.hypotheses = _extract_list(hyp_state.result, "hypotheses")
 
         # ── Layer 3c: Knowledge Agent (grounding + novelty) ───────────
         logger.info("Layer 3c: Knowledge grounding + novelty filter")
         know_state = self.knowledge_agent.run(task, {
-            "hypotheses": rr.hypotheses,
-            "learnings": rr.learnings,
+            "hypotheses":     rr.hypotheses,
+            "learnings":      rr.learnings,
+            "memory_context": memory_prompt,
         })
         validated_hypotheses = _extract_list(know_state.result, "validated_hypotheses") or rr.hypotheses
 
@@ -293,8 +333,9 @@ class ResearchOrchestrator:
         logger.info("Layer 3d: Experiment design + execution")
         exp_state = self.experiment_agent.run(task, {
             "accepted_hypotheses": validated_hypotheses,
-            "hypotheses": validated_hypotheses,   # legacy key
-            "learnings": rr.learnings,
+            "hypotheses":          validated_hypotheses,
+            "learnings":           rr.learnings,
+            "memory_context":      memory_prompt,
         })
         rr.experiments = (
             _extract_list(exp_state.result, "experiment_results") or
@@ -304,22 +345,24 @@ class ResearchOrchestrator:
         # ── Layer 3e: Writer Agent (AI Scientist-v2 full lifecycle) ────
         logger.info("Layer 3e: Report writing")
         writer_state = self.writer_agent.run(task, {
-            "learnings":   rr.learnings,
-            "urls":        list(search_out.urls),
-            "hypotheses":  validated_hypotheses,
-            "experiments": rr.experiments,
-            "prior_skills": prior_skills,
+            "learnings":      rr.learnings,
+            "urls":           list(search_out.urls),
+            "hypotheses":     validated_hypotheses,
+            "experiments":    rr.experiments,
+            "prior_skills":   prior_skills,
+            "memory_context": memory_prompt,
         })
         rr.report = writer_state.result or {}
 
         # ── Layer 3f: Reviewer Agent (AIRS-Bench 7-dim) ───────────────
         logger.info("Layer 3f: Peer review + AIRS-Bench scoring")
         review_state = self.reviewer_agent.run(task, {
-            "report":      rr.report,
-            "markdown":    rr.report.get("markdown", ""),
-            "learnings":   rr.learnings,
-            "experiments": rr.experiments,
-            "task":        task,
+            "report":         rr.report,
+            "markdown":       rr.report.get("markdown", ""),
+            "learnings":      rr.learnings,
+            "experiments":    rr.experiments,
+            "task":           task,
+            "memory_context": memory_prompt,
         })
         rr.review = review_state.result or {}
         rr.score  = rr.review.get("overall_score", 0.0)
@@ -368,10 +411,11 @@ class ResearchOrchestrator:
             "best_report": (
                 self._best_round.report if self._best_round else {}
             ),
-            "experience_summary": self.store.summary(),
-            "evolution_summary":  self.meta_agent.engine.archive.summary(),
-            "airs_bench_reliability": self.evaluator.reliability_report(),
-            "airs_bench_leaderboard": self.evaluator.leaderboard(top_n=5),
+            "experience_summary":      self.store.summary(),
+            "cognitive_memory_summary": self.cognitive_memory.summary(),
+            "evolution_summary":       self.meta_agent.engine.archive.summary(),
+            "airs_bench_reliability":  self.evaluator.reliability_report(),
+            "airs_bench_leaderboard":  self.evaluator.leaderboard(top_n=5),
         }
 
     # ------------------------------------------------------------------
@@ -394,10 +438,16 @@ class ResearchOrchestrator:
         for rr in self._rounds:
             dec = rr.review.get("accept_decision", "?")
             ev  = "✓ evolved" if rr.evolution.get("evolution_committed") else "  no change"
-            print(f"  Round {rr.round_num + 1}: score={rr.score:.3f}  decision={dec}  {ev}  {rr.elapsed_s:.0f}s")
-        print(f"\n  Best score: {self._best_score:.3f}")
-        print(f"  Memory:     {self.store.summary()}")
-        print(f"  Evolution:  {self.meta_agent.engine.archive.summary()}")
+            mem = "🧠" if rr.cognitive_context else "  "
+            print(f"  Round {rr.round_num + 1}: score={rr.score:.3f}  decision={dec}  {ev}  {mem}  {rr.elapsed_s:.0f}s")
+        cog = self.cognitive_memory.summary()
+        print(f"\n  Best score:  {self._best_score:.3f}")
+        print(f"  Experience:  {self.store.summary()}")
+        print(f"  🧠 Memories: {cog['total_memories']} total  "
+              f"({cog['by_type']})  "
+              f"{cog['hebbian_links']} Hebbian links  "
+              f"avg freq={cog['avg_frequency']}")
+        print(f"  Evolution:   {self.meta_agent.engine.archive.summary()}")
         print("=" * 60)
 
 

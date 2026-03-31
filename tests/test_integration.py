@@ -33,6 +33,9 @@ class TestOrchestratorSmoke:
         summary = result["experience_summary"]
         assert summary["total_rounds"] == 2
         assert summary["total_learnings"] >= 0  # learnings accumulate
+        # cognitive memory should have been populated
+        cog = result["cognitive_memory_summary"]
+        assert cog["total_memories"] >= 2  # at least one per round
 
     def test_evolution_summary_present(self, tmp_path):
         orch = ResearchOrchestrator(db_path=str(tmp_path / "test3.db"))

@@ -60,3 +60,63 @@
 - Score improvement: +0.020
 - Changes: added 3 new research directions
 - Agent scores: {"LiteratureAgent": 0.0, "HypothesisAgent": 0.7040000000000001, "KnowledgeAgent": 0.8, "ExperimentAgent": 0.829, "WriterAgent": 0.897, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 1.0, "HypothesisAgent": 0.784, "KnowledgeAgent": 0.6, "ExperimentAgent": 0.8015, "WriterAgent": 0.899, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 1.0, "HypothesisAgent": 0.764, "KnowledgeAgent": 0.6, "ExperimentAgent": 0.7050000000000001, "WriterAgent": 0.898, "ReviewerAgent": 0.5675}
+
+## Round 2 Update
+- Score improvement: +0.020
+- Changes: knowledge agent rejecting too many → lower acceptance threshold | added 3 new research directions
+- Agent scores: {"LiteratureAgent": 1.0, "HypothesisAgent": 0.764, "KnowledgeAgent": 0.0, "ExperimentAgent": 0.6839999999999999, "WriterAgent": 0.897, "ReviewerAgent": 0.5675}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 0.0, "HypothesisAgent": 0.7040000000000001, "KnowledgeAgent": 0.8, "ExperimentAgent": 0.75, "WriterAgent": 0.897, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 0.0, "HypothesisAgent": 0.7040000000000001, "KnowledgeAgent": 0.8, "ExperimentAgent": 0.75, "WriterAgent": 0.897, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 0.0, "HypothesisAgent": 0.7040000000000001, "KnowledgeAgent": 0.8, "ExperimentAgent": 0.75, "WriterAgent": 0.897, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 1.0, "HypothesisAgent": 0.784, "KnowledgeAgent": 0.6, "ExperimentAgent": 0.599, "WriterAgent": 0.899, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 1.0, "HypothesisAgent": 0.764, "KnowledgeAgent": 0.6, "ExperimentAgent": 0.7275, "WriterAgent": 0.898, "ReviewerAgent": 0.5675}
+
+## Round 2 Update
+- Score improvement: +0.020
+- Changes: knowledge agent rejecting too many → lower acceptance threshold | added 3 new research directions
+- Agent scores: {"LiteratureAgent": 1.0, "HypothesisAgent": 0.764, "KnowledgeAgent": 0.0, "ExperimentAgent": 0.6985, "WriterAgent": 0.897, "ReviewerAgent": 0.5675}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 0.0, "HypothesisAgent": 0.7040000000000001, "KnowledgeAgent": 0.8, "ExperimentAgent": 0.6835, "WriterAgent": 0.897, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 0.0, "HypothesisAgent": 0.7040000000000001, "KnowledgeAgent": 0.8, "ExperimentAgent": 0.6835, "WriterAgent": 0.897, "ReviewerAgent": 0.53}
+
+## Round 1 Update
+- Score improvement: +0.020
+- Changes: added 3 new research directions
+- Agent scores: {"LiteratureAgent": 0.0, "HypothesisAgent": 0.7040000000000001, "KnowledgeAgent": 0.8, "ExperimentAgent": 0.6835, "WriterAgent": 0.897, "ReviewerAgent": 0.53}
