@@ -21,6 +21,8 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any
 
+from core.graph import ResearchGraph, NodeType, EdgeType
+
 
 @dataclass
 class AgentBelief:
@@ -85,6 +87,8 @@ class Blackboard:
         self._agent_beliefs: dict[str, AgentBelief] = {}
         self._tom_observations: list[dict[str, Any]] = []  # ToM trace log
         self._persist_path = persist_path
+        # Knowledge graph — agents attach typed relationships here
+        self.graph: ResearchGraph = ResearchGraph()
 
     # ------------------------------------------------------------------ #
     #  Research State                                                       #
@@ -234,6 +238,7 @@ class Blackboard:
                 "nodes": {k: asdict(v) for k, v in self._nodes.items()},
                 "agent_beliefs": {k: asdict(v) for k, v in self._agent_beliefs.items()},
                 "tom_observations": self._tom_observations,
+                "graph": self.graph.to_dict(),
             }
 
     def _flush(self) -> None:
@@ -257,4 +262,6 @@ class Blackboard:
                 k: AgentBelief(**v) for k, v in data["agent_beliefs"].items()
             }
             bb._tom_observations = data.get("tom_observations", [])
+            if "graph" in data:
+                bb.graph = ResearchGraph.from_dict(data["graph"])
         return bb
