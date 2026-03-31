@@ -5,10 +5,15 @@ Implements the BFTS evaluate_fn:
   Given an ExperimentNode, generate the code, execute it (sandboxed),
   parse the metric from stdout, and return (metric, error_trace).
 
+For repo-level hypotheses (node.repo_url is set), delegates to
+HyperAgentClient (FSoft-AI4Code/HyperAgent 4-sub-agent pipeline or bash
+fallback) instead of writing code from scratch.
+
 Inspired by:
   - AI-Scientist v2 code execution worker
   - karpathy/autoresearch train.py modification + eval loop
   - AIDE "write → execute → evaluate → debug" per node
+  - FSoft-AI4Code/HyperAgent Planner/Navigator/Editor/Executor pipeline
 """
 
 from __future__ import annotations
@@ -24,6 +29,7 @@ from pathlib import Path
 from typing import Any
 
 from agents.base_agent import BaseAgent
+from agents.hyperagent_client import HyperAgentClient
 from core.blackboard import Blackboard, ExperimentNode
 from tom.engine import TheoryOfMindEngine
 
@@ -42,7 +48,14 @@ _METRIC_PARSE_PREFIX = "METRIC:"
 
 
 class ExperimentAgent(BaseAgent):
-    """Executes experiments and parses their metric."""
+    """Executes experiments and parses their metric.
+
+    For *repo-level* hypotheses (``node.repo_url`` populated on the
+    ExperimentNode), the agent delegates execution to :class:`HyperAgentClient`
+    (FSoft-AI4Code 4-sub-agent pipeline: Planner → Navigator → Code Editor →
+    Executor).  For self-contained code experiments it uses the inline
+    sandboxed subprocess approach.
+    """
 
     def __init__(
         self,
@@ -51,10 +64,12 @@ class ExperimentAgent(BaseAgent):
         llm_fn: Any = None,
         exec_timeout: int = 300,           # 5 minutes per experiment
         work_dir: str | None = None,
+        hyperagent_client: HyperAgentClient | None = None,
     ) -> None:
         super().__init__("experiment", blackboard, tom_engine, llm_fn)
         self._exec_timeout = exec_timeout
         self._work_dir = Path(work_dir) if work_dir else Path(tempfile.mkdtemp(prefix="ar2_"))
+        self._hyperagent = hyperagent_client or HyperAgentClient()
 
     def act(self, context: dict[str, Any]) -> dict[str, Any]:
         """Top-level act: generate code for a hypothesis and run it."""
