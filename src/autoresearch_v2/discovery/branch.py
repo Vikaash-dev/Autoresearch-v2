@@ -35,4 +35,3 @@ class Branch:
 
     def prune(self) -> None:
         self.state = BranchState.PRUNED
-

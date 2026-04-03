@@ -24,4 +24,3 @@ class Objective:
     outputs: dict[str, Any] = field(default_factory=dict)
     compute_budget: float = 1.0
     verification_required: bool = True
-

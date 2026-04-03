@@ -1,2 +1,1 @@
 """Epistemic verification primitives."""
-

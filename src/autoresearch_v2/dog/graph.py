@@ -31,4 +31,3 @@ class DynamicObjectiveGraph:
         obj.status = ObjectiveStatus.COMPLETE
         if outputs:
             obj.outputs.update(outputs)
-

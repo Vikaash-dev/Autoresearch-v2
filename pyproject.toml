@@ -7,4 +7,3 @@ name = "autoresearch-v2"
 version = "0.1.0"
 description = "AutoResearch v2 implementation bootstrap"
 requires-python = ">=3.10"
-

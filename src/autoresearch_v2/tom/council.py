@@ -29,4 +29,3 @@ class ToMReviewerCouncil:
         scores = {persona: min(7.0, round(base, 2)) for persona in self.personas}
         average = sum(scores.values()) / len(scores)
         return ReviewOutcome(accepted=average >= self.acceptance_threshold, average_score=average, scores=scores)
-

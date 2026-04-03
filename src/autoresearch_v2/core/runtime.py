@@ -56,4 +56,3 @@ def run_bootstrap(topic: str, branches: int) -> RunSummary:
         accepted_by_council=review.accepted,
         verification_passed=verification.passed,
     )
-

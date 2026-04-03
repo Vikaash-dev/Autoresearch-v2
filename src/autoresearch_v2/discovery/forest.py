@@ -24,4 +24,3 @@ class DiscoveryForest:
 
     def active_branches(self) -> list[Branch]:
         return [b for b in self.branches.values() if b.state != BranchState.PRUNED]
-

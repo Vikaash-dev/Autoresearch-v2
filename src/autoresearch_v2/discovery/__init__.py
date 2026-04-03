@@ -1,2 +1,1 @@
 """Discovery forest primitives."""
-

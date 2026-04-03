@@ -19,14 +19,14 @@ class VerificationResult:
 
 class ZeroTrustEpistemicVerifier:
     def verify(self, claim: str, has_citation: bool, has_log_proof: bool, formal_required: bool = False) -> VerificationResult:
-        formal_passed = True if formal_required else None
+        formal_passed = False if formal_required else None
         notes: list[str] = []
         if not has_citation:
             notes.append("missing citation")
         if not has_log_proof:
             notes.append("missing execution proof")
         if formal_required:
-            notes.append("formal verification placeholder passed")
+            notes.append("formal verification required but not yet implemented")
         return VerificationResult(
             claim=claim,
             literature_passed=has_citation,
@@ -34,4 +34,3 @@ class ZeroTrustEpistemicVerifier:
             formal_passed=formal_passed,
             notes=notes,
         )
-

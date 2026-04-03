@@ -41,6 +41,12 @@ class TestToMEpistemic(unittest.TestCase):
         self.assertFalse(result.passed)
         self.assertIn("missing citation", result.notes)
 
+    def test_zero_trust_verifier_fails_when_formal_required_placeholder(self) -> None:
+        verifier = ZeroTrustEpistemicVerifier()
+        result = verifier.verify("claim", has_citation=True, has_log_proof=True, formal_required=True)
+        self.assertFalse(result.passed)
+        self.assertIn("formal verification required but not yet implemented", result.notes)
+
 
 class TestRuntime(unittest.TestCase):
     def test_run_bootstrap_summary(self) -> None:
@@ -53,4 +59,3 @@ class TestRuntime(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
