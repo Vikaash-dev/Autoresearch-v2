@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, TYPE_CHECKING
+from ..llm import LLMClient
 
 if TYPE_CHECKING:
     from ..core.objective_graph import Objective
@@ -21,13 +22,13 @@ class BaseAgent(ABC):
     def __init__(self, config: "AutoResearchConfig") -> None:
         self.config = config
         self.logger = logging.getLogger(f"autoresearch.agents.{self.name}")
+        self.llm_client = LLMClient(config.llm)
 
     @abstractmethod
     def run(self, objective: "Objective", state: "RunState", config: "AutoResearchConfig") -> Any:
         """Execute the agent's task for the given objective."""
 
     def _llm_prompt(self, prompt: str) -> str:
-        """Placeholder LLM call — replace with real provider integration."""
+        """LLM call via configured provider with safe fallback."""
         self.logger.debug("LLM prompt (%d chars): %s...", len(prompt), prompt[:100])
-        # In production, call self.config.llm.provider API here
-        return f"[LLM response to: {prompt[:80]}...]"
+        return self.llm_client.prompt(prompt)
