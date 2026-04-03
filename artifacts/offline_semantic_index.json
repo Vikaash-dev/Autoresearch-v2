@@ -1,0 +1,125 @@
+{
+  "documents": [
+    {
+      "doc_id": "arxiv:2603.19461",
+      "title": "Hyperagents",
+      "abstract": "Hyperagents defines self-referential and self-improving programs. The framework emphasizes recursive metacognitive self-modification and adaptation over time.",
+      "source": "arXiv",
+      "year": 2026,
+      "url": "https://arxiv.org/abs/2603.19461"
+    },
+    {
+      "doc_id": "related:group-evolving-agents-2026",
+      "title": "Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing",
+      "abstract": "A multi-agent system where agents improve by sharing experiences and reusable skills. Targets open-ended self-improvement in collaborative settings.",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": ""
+    },
+    {
+      "doc_id": "related:agentfactory-2026",
+      "title": "AgentFactory: A Self-Evolving Framework Through Executable Subagent Accumulation and Reuse",
+      "abstract": "AgentFactory accumulates and reuses executable subagents to continuously expand capabilities. Focuses on growth by composition and retention of effective agent behaviors.",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": ""
+    },
+    {
+      "doc_id": "related:sage-2026",
+      "title": "SAGE: Multi-Agent Self-Evolution for LLM Reasoning",
+      "abstract": "SAGE applies self-evolution to improve large language model reasoning through multi-agent refinement loops.",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": ""
+    },
+    {
+      "doc_id": "related:evoskill-2026",
+      "title": "EvoSkill: Automated Skill Discovery for Multi-Agent Systems",
+      "abstract": "EvoSkill studies automated skill discovery and selection in multi-agent workflows.",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": ""
+    },
+    {
+      "doc_id": "related:semag-2026",
+      "title": "SEMAG: Self-Evolutionary Multi-Agent Code Generation",
+      "abstract": "SEMAG applies self-evolutionary multi-agent methods to code generation and iterative repair.",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": ""
+    },
+    {
+      "doc_id": "arxiv:2409.16299",
+      "title": "HyperAgent: Generalist Software Engineering Agents to Solve Coding Tasks at Scale",
+      "abstract": "HyperAgent is a software-engineering automation framework for coding tasks at scale. It is distinct from Hyperagents (2026) and does not define recursive metacognitive self-modification.",
+      "source": "arXiv",
+      "year": 2024,
+      "url": "https://arxiv.org/abs/2409.16299"
+    }
+  ],
+  "chunks": [
+    {
+      "evidence_id": "arxiv:2603.19461#chunk-0",
+      "doc_id": "arxiv:2603.19461",
+      "title": "Hyperagents",
+      "source": "arXiv",
+      "year": 2026,
+      "url": "https://arxiv.org/abs/2603.19461",
+      "text": "Hyperagents defines self-referential and self-improving programs. The framework emphasizes recursive metacognitive self-modification and adaptation over time."
+    },
+    {
+      "evidence_id": "related:group-evolving-agents-2026#chunk-0",
+      "doc_id": "related:group-evolving-agents-2026",
+      "title": "Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": "",
+      "text": "A multi-agent system where agents improve by sharing experiences and reusable skills. Targets open-ended self-improvement in collaborative settings."
+    },
+    {
+      "evidence_id": "related:agentfactory-2026#chunk-0",
+      "doc_id": "related:agentfactory-2026",
+      "title": "AgentFactory: A Self-Evolving Framework Through Executable Subagent Accumulation and Reuse",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": "",
+      "text": "AgentFactory accumulates and reuses executable subagents to continuously expand capabilities. Focuses on growth by composition and retention of effective agent behaviors."
+    },
+    {
+      "evidence_id": "related:sage-2026#chunk-0",
+      "doc_id": "related:sage-2026",
+      "title": "SAGE: Multi-Agent Self-Evolution for LLM Reasoning",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": "",
+      "text": "SAGE applies self-evolution to improve large language model reasoning through multi-agent refinement loops."
+    },
+    {
+      "evidence_id": "related:evoskill-2026#chunk-0",
+      "doc_id": "related:evoskill-2026",
+      "title": "EvoSkill: Automated Skill Discovery for Multi-Agent Systems",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": "",
+      "text": "EvoSkill studies automated skill discovery and selection in multi-agent workflows."
+    },
+    {
+      "evidence_id": "related:semag-2026#chunk-0",
+      "doc_id": "related:semag-2026",
+      "title": "SEMAG: Self-Evolutionary Multi-Agent Code Generation",
+      "source": "community-preprint",
+      "year": 2026,
+      "url": "",
+      "text": "SEMAG applies self-evolutionary multi-agent methods to code generation and iterative repair."
+    },
+    {
+      "evidence_id": "arxiv:2409.16299#chunk-0",
+      "doc_id": "arxiv:2409.16299",
+      "title": "HyperAgent: Generalist Software Engineering Agents to Solve Coding Tasks at Scale",
+      "source": "arXiv",
+      "year": 2024,
+      "url": "https://arxiv.org/abs/2409.16299",
+      "text": "HyperAgent is a software-engineering automation framework for coding tasks at scale. It is distinct from Hyperagents (2026) and does not define recursive metacognitive self-modification."
+    }
+  ]
+}
