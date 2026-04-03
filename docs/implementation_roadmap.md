@@ -12,11 +12,10 @@
 - ToM: 4 reviewer personas, `CollaboratorIntentProfile`, `AdversarialChallengeGenerator`, `EpistemicNegotiationLoop`
 - Reflection: `SelfReviewModule`, `SelfImprovementEngine` (safe allowlist)
 - CLI: `run`, `resume`, `review`, `export`
-- 27 passing tests (unit + E2E smoke)
+- 30 passing tests (unit + E2E smoke)
 - Docs: architecture, contracts, roadmap, research review
 
 **Deferred (TODO):**
-- Real LLM API integration (currently stubbed via `_llm_prompt`)
 - Docker sandbox execution mode (`sandbox: docker`)
 - Structured prompt-level self-improvement (Milestone 2)
 - Parallelised objective execution (multi-thread/async branches)
@@ -24,20 +23,18 @@
 
 ---
 
-## Milestone 1 — LLM Integration (30 days)
+## Milestone 1 — LLM Integration ✅ (core path delivered)
 
 **Goal:** Replace `_llm_prompt` stub with real LLM calls.
 
 ### Tasks
-- [ ] Implement `LLMClient` abstraction in `autoresearch/llm/`
-  - Backends: OpenAI, Anthropic, local Ollama
-  - Retry logic, rate limiting, cost tracking
-- [ ] Wire `LLMClient` into all 8 agents
+- [x] Implement `LLMClient` abstraction in `autoresearch/llm/` (OpenAI + safe fallback)
+- [x] Wire `LLMClient` into all 8 agents via `BaseAgent`
 - [ ] Implement structured output parsing (JSON mode / Pydantic validators)
 - [ ] Implement `HypothesisGeneratorAgent` with real prompt templates
 - [ ] Implement `ResearchPlannerAgent` with multi-step chain-of-thought planning
 - [ ] Add `--dry-run` CLI flag (no LLM calls, uses mocked responses)
-- [ ] Integration tests with mocked LLM responses
+- [x] Integration tests with mocked LLM responses (LLM client + agent path)
 
 ---
 
@@ -117,7 +114,7 @@
 
 | Area | Issue | Priority |
 |---|---|---|
-| `_llm_prompt` | Returns stub string, not real LLM response | High (Milestone 1) |
+| `LLM integration` | Core provider path implemented; advanced parsing/provider breadth pending | Medium (Milestone 1 follow-up) |
 | `SandboxExecutor` | Only subprocess mode implemented | Medium (Milestone 2) |
 | `ArxivConnector` | Synchronous HTTP with `urllib` | Low (use `httpx` async) |
 | `ObjectiveGraph` | Sequential execution only | Medium (Milestone 5) |

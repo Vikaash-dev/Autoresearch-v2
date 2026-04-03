@@ -145,7 +145,7 @@ autoresearch/
 ├── reflection/      # SelfReviewModule, SelfImprovementEngine
 └── tom/             # ReviewerPersonas, IntentProfile, Adversarial, Negotiation
 
-tests/               # 27 unit + E2E tests
+tests/               # 30 unit + E2E tests
 docs/                # Architecture, contracts, roadmap, research review
 Dockerfile
 .devcontainer/

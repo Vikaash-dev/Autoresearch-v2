@@ -46,7 +46,7 @@ See [docs/setup.md](docs/setup.md) for full setup instructions.
 ## Tests
 
 ```bash
-pytest tests/ -v   # 27 tests, all passing
+pytest tests/ -v   # 30 tests, all passing
 ```
 
 ## Architecture Overview

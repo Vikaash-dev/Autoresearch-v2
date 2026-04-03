@@ -119,7 +119,7 @@ will automatically install all dev dependencies.
 pytest tests/ -v
 ```
 
-Expected output: 27 passed.
+Expected output: 30 passed.
 
 For coverage:
 
@@ -136,8 +136,9 @@ pytest tests/ --cov=autoresearch --cov-report=term-missing
 | `OPENAI_API_KEY` | OpenAI API key for LLM calls | For production runs |
 | `SEMANTIC_SCHOLAR_API_KEY` | Semantic Scholar API key | Optional (rate limit) |
 
-> **Note:** Without an LLM API key, the agents use a stub `_llm_prompt()` that returns
-> placeholder text. The pipeline still runs end-to-end for testing and development.
+> **Note:** LLM calls are routed through a provider-aware `LLMClient` (OpenAI path implemented).
+> Without an LLM API key, it gracefully falls back to deterministic placeholder output so
+> the pipeline still runs end-to-end for testing and development.
 
 ---
 
@@ -154,7 +155,7 @@ autoresearch/
 ├── reflection/   # SelfReviewModule, SelfImprovementEngine
 └── tom/          # Reviewer personas, Intent, Adversarial, Negotiation
 
-tests/            # 27 unit + E2E tests
+tests/            # 30 unit + E2E tests
 docs/             # Architecture, contracts, roadmap, research review
 Dockerfile
 .devcontainer/
