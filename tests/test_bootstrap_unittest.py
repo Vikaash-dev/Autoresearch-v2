@@ -1,11 +1,23 @@
 import unittest
 
+from autoresearch_v2.compute.planner import ComputePlanner
+from autoresearch_v2.compute.simulator import ComputeSimulator
+from autoresearch_v2.discovery.grafter import BranchGrafter
+from autoresearch_v2.discovery.pruner import BranchPruner
 from autoresearch_v2.core.runtime import run_bootstrap
 from autoresearch_v2.discovery.branch import Branch, BranchState
 from autoresearch_v2.discovery.forest import DiscoveryForest
+from autoresearch_v2.dog.allocator import ComputeBudgetAllocator
 from autoresearch_v2.dog.graph import DynamicObjectiveGraph
 from autoresearch_v2.dog.objective import Objective
+from autoresearch_v2.dog.scheduler import ObjectiveScheduler
+from autoresearch_v2.epistemic.pipeline import EpistemicPipeline
 from autoresearch_v2.epistemic.verification import ZeroTrustEpistemicVerifier
+from autoresearch_v2.hyper_kernel.kernel import HyperKernel
+from autoresearch_v2.hyper_kernel.modifier import BoundedModifier
+from autoresearch_v2.hyper_kernel.telemetry import RunTelemetry
+from autoresearch_v2.tom.dialogue import AdversarialDialogueProtocol
+from autoresearch_v2.tom.intent_model import CollaboratorIntentModel
 from autoresearch_v2.tom.council import ToMReviewerCouncil
 
 
@@ -18,6 +30,16 @@ class TestDOG(unittest.TestCase):
         graph.mark_complete("a")
         self.assertEqual([o.id for o in graph.ready_objectives()], ["b"])
 
+    def test_scheduler_and_allocator(self) -> None:
+        graph = DynamicObjectiveGraph()
+        graph.add_objective(Objective(id="a", description="a", priority=1.0))
+        scheduler = ObjectiveScheduler(graph)
+        assignments = scheduler.schedule(["agent-x"], limit=1)
+        self.assertEqual(len(assignments), 1)
+        allocator = ComputeBudgetAllocator(total_budget=10.0)
+        budget = allocator.allocate([a.objective_id for a in assignments])
+        self.assertEqual(budget["a"], 10.0)
+
 
 class TestDiscovery(unittest.TestCase):
     def test_branch_pruning_threshold(self) -> None:
@@ -26,6 +48,19 @@ class TestDiscovery(unittest.TestCase):
         result = forest.score_branch("b1", 0.1)
         self.assertEqual(result.state, BranchState.PRUNED)
         self.assertEqual(forest.active_branches(), [])
+
+    def test_pruner_and_grafter(self) -> None:
+        forest = DiscoveryForest(prune_threshold=0.1)
+        forest.add_branch(Branch(id="b1", hypothesis="h1"))
+        forest.add_branch(Branch(id="b2", hypothesis="h2"))
+        forest.score_branch("b1", 0.8)
+        forest.score_branch("b2", 0.4)
+        grafter = BranchGrafter(min_score=0.6)
+        self.assertTrue(grafter.graft(forest, "b1", "b2"))
+        self.assertEqual(forest.branches["b2"].state, BranchState.GRAFTED)
+        pruner = BranchPruner(prune_floor=0.5)
+        pruned = pruner.prune(forest)
+        self.assertIn("b2", pruned)
 
 
 class TestToMEpistemic(unittest.TestCase):
@@ -47,6 +82,33 @@ class TestToMEpistemic(unittest.TestCase):
         self.assertFalse(result.passed)
         self.assertIn("formal verification required but not yet implemented", result.notes)
 
+    def test_dialogue_intent_and_epistemic_pipeline(self) -> None:
+        council = ToMReviewerCouncil()
+        dialogue = AdversarialDialogueProtocol(council=council, max_rounds=2)
+        dialogue_result = dialogue.run("draft")
+        self.assertGreaterEqual(len(dialogue_result.rounds), 1)
+
+        cim = CollaboratorIntentModel(risk_appetite=0.5, rigor_vs_speed=0.8, venue_bias=0.5, collaboration_style=0.5)
+        adjusted = cim.adjust_budgets({"verification": 10.0, "exploration": 10.0})
+        self.assertGreater(adjusted["verification"], 10.0)
+
+        pipeline = EpistemicPipeline()
+        result = pipeline.verify_claim("claim", citations=["c1"], execution_log=["ok"], formal_required=False)
+        self.assertTrue(result.passed)
+        self.assertEqual(len(pipeline.get_provenance_graph().entries), 1)
+
+    def test_compute_and_hyperkernel(self) -> None:
+        plan = ComputePlanner(total_budget=90).plan({"a": 2, "b": 1})
+        self.assertAlmostEqual(plan["a"] + plan["b"], 90.0)
+        sim = ComputeSimulator()
+        self.assertEqual(sim.estimate_duration(3, avg_seconds_per_objective=2), 6)
+
+        hk = HyperKernel(modifier=BoundedModifier())
+        telemetry = RunTelemetry(agent_latency={"writer": 12.0}, failure_rates={"writer": 0.0}, notes=[])
+        mod = hk.optimize_agent("writer", telemetry)
+        self.assertIsNotNone(mod)
+        self.assertTrue(hk.apply_modification(mod))
+
 
 class TestRuntime(unittest.TestCase):
     def test_run_bootstrap_summary(self) -> None:
@@ -55,6 +117,7 @@ class TestRuntime(unittest.TestCase):
         self.assertEqual(summary.branch_count, 2)
         self.assertGreaterEqual(summary.ready_objectives, 1)
         self.assertTrue(summary.verification_passed)
+        self.assertGreaterEqual(summary.provenance_entries, 1)
 
 
 if __name__ == "__main__":

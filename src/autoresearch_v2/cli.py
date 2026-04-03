@@ -18,7 +18,9 @@ def main() -> int:
     summary = run_bootstrap(topic=args.topic, branches=max(1, args.branches))
     print(
         f"topic={summary.topic}; branches={summary.branch_count}; ready_objectives={summary.ready_objectives}; "
-        f"accepted_by_council={summary.accepted_by_council}; verification_passed={summary.verification_passed}"
+        f"accepted_by_council={summary.accepted_by_council}; verification_passed={summary.verification_passed}; "
+        f"domain={summary.domain}; provenance_entries={summary.provenance_entries}; "
+        f"safety_warnings={len(summary.safety_warnings)}"
     )
     return 0
 
