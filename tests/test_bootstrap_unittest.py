@@ -19,6 +19,7 @@ from autoresearch_v2.hyper_kernel.telemetry import RunTelemetry
 from autoresearch_v2.tom.dialogue import AdversarialDialogueProtocol
 from autoresearch_v2.tom.intent_model import CollaboratorIntentModel
 from autoresearch_v2.tom.council import ToMReviewerCouncil
+from autoresearch_v2.retrieval.semantic import LocalCorpusIngestor, LocalSemanticRetriever
 
 
 class TestDOG(unittest.TestCase):
@@ -93,7 +94,13 @@ class TestToMEpistemic(unittest.TestCase):
         self.assertGreater(adjusted["verification"], 10.0)
 
         pipeline = EpistemicPipeline()
-        result = pipeline.verify_claim("claim", citations=["c1"], execution_log=["ok"], formal_required=False)
+        result = pipeline.verify_claim(
+            "claim",
+            citations=["c1"],
+            evidence=[{"score": 0.6, "chunk": "supports claim with evidence"}],
+            execution_log=["ok"],
+            formal_required=False,
+        )
         self.assertTrue(result.passed)
         self.assertEqual(len(pipeline.get_provenance_graph().entries), 1)
 
@@ -118,6 +125,26 @@ class TestRuntime(unittest.TestCase):
         self.assertGreaterEqual(summary.ready_objectives, 1)
         self.assertTrue(summary.verification_passed)
         self.assertGreaterEqual(summary.provenance_entries, 1)
+        self.assertIn("retrieval_mode=offline_local_semantic", summary.telemetry_notes)
+
+
+class TestRetrieval(unittest.TestCase):
+    def test_local_retriever_ranks_hyperagents(self) -> None:
+        retriever = LocalSemanticRetriever(documents=LocalCorpusIngestor().default_corpus())
+        results = retriever.search("self-referential self-improving hyperagents", top_k=3)
+        self.assertGreaterEqual(len(results), 1)
+        self.assertEqual(results[0].doc_id, "arxiv:2603.19461")
+
+    def test_index_persistence_round_trip(self) -> None:
+        retriever = LocalSemanticRetriever(
+            index_path="artifacts/test_offline_semantic_index.json",
+            documents=LocalCorpusIngestor().default_corpus(),
+        )
+        first = retriever.search("software engineering coding tasks", top_k=1)
+        reloaded = LocalSemanticRetriever(index_path="artifacts/test_offline_semantic_index.json")
+        second = reloaded.search("software engineering coding tasks", top_k=1)
+        self.assertEqual(len(first), len(second))
+        self.assertEqual(first[0].doc_id, second[0].doc_id)
 
 
 if __name__ == "__main__":

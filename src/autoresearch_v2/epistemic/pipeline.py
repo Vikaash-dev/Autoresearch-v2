@@ -26,10 +26,11 @@ class EpistemicPipeline:
         self,
         claim: str,
         citations: list[str],
+        evidence: list[dict[str, object]] | None,
         execution_log: list[str],
         formal_required: bool = False,
     ) -> EpistemicVerificationResult:
-        l = self.literature_gate.verify(claim, citations)
+        l = self.literature_gate.verify(claim, citations, evidence=evidence)
         c = self.code_gate.verify(claim, execution_log)
         f = self.formal_gate.verify(claim, required=formal_required)
         passed = l.passed and c.passed and f.passed
@@ -49,4 +50,3 @@ class EpistemicPipeline:
 
     def get_provenance_graph(self) -> ClaimProvenanceGraph:
         return self.provenance
-

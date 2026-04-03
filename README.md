@@ -29,6 +29,19 @@ An initial Python implementation scaffold now exists under `src/autoresearch_v2/
 - `core/runtime.py` — End-to-end bootstrap run wiring
 - `cli.py` — Minimal CLI entrypoint
 
+## Retrieval Capability Matrix
+
+| Capability | Status |
+|---|---|
+| Offline semantic retrieval over local corpus | ✅ Enabled by default |
+| API-free operation in restricted environments | ✅ Supported |
+| arXiv/OpenAlex/SemanticScholar online connectors | ⚠️ Present as stubs / optional future adapters |
+| Ranked evidence output for literature grounding | ✅ Enabled in `LiteratureAgent` |
+
+The bootstrap runtime now defaults to a local semantic retriever and can run without external network APIs.
+It includes seeded entries for Hyperagents (2026) and related self-evolving-agent works, with explicit
+disambiguation from HyperAgent (2024).
+
 Run bootstrap CLI:
 
 ```bash

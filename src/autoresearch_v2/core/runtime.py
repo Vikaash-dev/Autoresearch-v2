@@ -26,6 +26,7 @@ from autoresearch_v2.integrations.openalex_client import OpenAlexClient
 from autoresearch_v2.integrations.semantic_scholar import SemanticScholarClient
 from autoresearch_v2.memory.engram import EngramMemory
 from autoresearch_v2.memory.research_graph import ResearchGraph
+from autoresearch_v2.retrieval.semantic import LocalSemanticRetriever
 from autoresearch_v2.safety.audit_log import AuditLog
 from autoresearch_v2.safety.domain_classifier import DomainClassifier
 from autoresearch_v2.safety.guardrails import SafetyGuardrails
@@ -81,13 +82,25 @@ def run_bootstrap(topic: str, branches: int) -> RunSummary:
         graph.mark_complete(a.objective_id, outputs={"budget": budgets.get(a.objective_id, 0.0)})
     ready = graph.ready_objectives()
 
+    retriever = LocalSemanticRetriever(
+        index_path="artifacts/offline_semantic_index.json",
+    )
     arxiv = ArxivClient()
     openalex = OpenAlexClient()
     ss = SemanticScholarClient()
-    candidates = arxiv.search(topic, 4) + openalex.search(topic, 3) + ss.search(topic, 3)
+    candidates = arxiv.search(topic, 2) + openalex.search(topic, 2) + ss.search(topic, 2)
 
     literature_agent = LiteratureAgent()
-    lit_result = literature_agent.execute(graph.get("literature"), {"topic": topic, "literature_candidates": candidates})
+    lit_result = literature_agent.execute(
+        graph.get("literature"),
+        {
+            "topic": topic,
+            "literature_query": f"{topic} hyperagents self-improving multi-agent research",
+            "literature_candidates": candidates,
+            "retriever": retriever,
+            "top_k": 10,
+        },
+    )
     graph.mark_complete("literature", outputs=lit_result.outputs)
 
     hypothesis_agent = HypothesisAgent()
@@ -128,6 +141,7 @@ def run_bootstrap(topic: str, branches: int) -> RunSummary:
     verification = epistemic.verify_claim(
         claim=f"Bootstrap run for {topic}",
         citations=lit_result.outputs.get("citations", []),
+        evidence=lit_result.outputs.get("evidence", []),
         execution_log=code_result.outputs.get("execution_log", []),
         formal_required=False,
     )
@@ -139,7 +153,8 @@ def run_bootstrap(topic: str, branches: int) -> RunSummary:
     audit.record(f"compute_estimate_sec={estimate:.1f}")
 
     research_graph = ResearchGraph()
-    research_graph.add_note(topic, f"candidate_refs={len(candidates)}")
+    research_graph.add_note(topic, f"candidate_refs={len(lit_result.outputs.get('citations', []))}")
+    audit.record("retrieval_mode=offline_local_semantic")
     engram = EngramMemory()
     engram.upsert_skill("bootstrap", "Runs baseline DOG+Discovery+ToM+Epistemic pipeline")
 
