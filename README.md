@@ -17,3 +17,20 @@ AutoResearch v2 aims to surpass current auto paper generation, auto research and
 - **ToM Reviewer Council:** Five reviewer personas (Skeptic, Engineer, Visionary, Domain Expert, Ethicist) that conduct a 3-round adversarial dialogue with the Author Agent before a manuscript is accepted.
 - **Zero-Trust Epistemic Stack:** Every claim must pass three independent gates (literature consistency, code-log correspondence, and optional formal verification) before inclusion in output.
 - **Skill Registry:** Persistent cross-run memory that stores lessons learned, inspired by the engram pattern from [tonitangpotato/autoresearch-engram](https://github.com/tonitangpotato/autoresearch-engram).
+
+## Implementation Bootstrap
+
+An initial Python implementation scaffold now exists under `src/autoresearch_v2/`:
+
+- `dog/` — Objective model and dynamic graph scheduling primitives
+- `discovery/` — Branch lifecycle and forest pruning primitives
+- `tom/` — ToM reviewer council baseline
+- `epistemic/` — Zero-trust verification baseline
+- `core/runtime.py` — End-to-end bootstrap run wiring
+- `cli.py` — Minimal CLI entrypoint
+
+Run bootstrap CLI:
+
+```bash
+PYTHONPATH=src python -m autoresearch_v2.cli --topic "self-correcting LLMs" --branches 3
+```
