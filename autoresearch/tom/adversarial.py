@@ -30,6 +30,9 @@ class AdversarialChallengeGenerator:
             "persona": persona.name,
             "hypothesis_title": title,
             "challenges": challenges,
+            # Skepticism = complement of mean bias score across all dimensions.
+            # Higher average bias (closer to 1) means the persona is more accepting,
+            # so skepticism approaches 0; a neutral persona yields ~0.33 skepticism.
             "overall_skepticism": 1.0 - sum(persona.bias_profile.values()) / max(len(persona.bias_profile), 1),
             "recommended_actions": persona.acceptance_criteria,
         }

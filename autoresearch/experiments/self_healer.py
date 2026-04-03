@@ -53,7 +53,11 @@ class SelfHealingLoop:
         for pattern, fix_type in self.COMMON_FIXES:
             match = re.search(pattern, stderr)
             if match:
-                return getattr(self, f"_fix_{fix_type}", lambda c, m: c)(code, match)
+                fix_method = getattr(self, f"_fix_{fix_type}", None)
+                if fix_method is None:
+                    logger.debug("No repair method for fix type '%s'; skipping", fix_type)
+                    continue
+                return fix_method(code, match)
         return code
 
     def _fix_add_import_stub(self, code: str, match: re.Match) -> str:

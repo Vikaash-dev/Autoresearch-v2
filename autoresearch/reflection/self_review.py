@@ -98,7 +98,8 @@ class SelfReviewModule:
     def _score_quality(self, state: "RunState") -> Dict[str, float]:
         evidence_score = min(1.0, len(state.evidence) / 10)
         hyp_score = min(1.0, len(state.hypotheses) / 3)
-        exp_score = min(1.0, len([e for e in state.experiments if e.get("status") == "success"]) / max(len(state.experiments), 1))
+        successful_exps = len([e for e in state.experiments if e.get("status") == "success"])
+        exp_score = min(1.0, successful_exps / max(len(state.experiments), 1))
         review_score = min(1.0, len(state.reviews) / 5)
         overall = (evidence_score + hyp_score + exp_score + review_score) / 4
         return {
