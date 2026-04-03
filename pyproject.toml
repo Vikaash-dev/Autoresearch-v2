@@ -24,6 +24,9 @@ dev = ["pytest>=8", "pytest-asyncio>=0.23", "pytest-cov>=5"]
 [project.scripts]
 autoresearch = "autoresearch.cli.main:cli"
 
+[tool.setuptools.packages.find]
+include = ["autoresearch*"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
