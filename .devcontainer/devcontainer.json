@@ -1,0 +1,6 @@
+{
+  "name": "AutoResearch v2",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip install -e '.[dev]'",
+  "features": {"ghcr.io/devcontainers/features/docker-in-docker:2": {}}
+}

@@ -1,0 +1,23 @@
+max_iterations: 3
+log_level: INFO
+llm:
+  provider: openai
+  model: gpt-4o
+  temperature: 0.7
+  max_tokens: 4096
+literature:
+  arxiv_max_results: 20
+  scholarly_backend: semantic_scholar
+experiment:
+  sandbox: subprocess
+  max_retries: 3
+  timeout_seconds: 300
+tom:
+  enabled: true
+  adversarial_rounds: 2
+reflection:
+  enabled: true
+  safe_modification_only: true
+checkpoint:
+  enabled: true
+  save_every_n_steps: 1
