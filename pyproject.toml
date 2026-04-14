@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autoresearch-v2"
+version = "2.0.0"
+description = "SERA-X: Self-Evolving Research Architecture — surpassing HyperAgents via Bilevel Autoresearch, AI Scientist-v2 tree search, Centaur CMA-ES, and DGM meta-improvement"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Autoresearch-v2 Contributors" }]
+keywords = [
+    "autoresearch", "self-evolving", "multi-agent", "bilevel",
+    "hyperagents", "ai-scientist", "centaur", "cma-es", "airs-bench",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+llm = [
+    "openai>=1.0",
+    "anthropic>=0.20",
+]
+search = [
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "firecrawl-py>=0.0.10",
+]
+full = [
+    "openai>=1.0",
+    "anthropic>=0.20",
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "firecrawl-py>=0.0.10",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "black>=24.0",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+autoresearch = "autoresearch.orchestrator:main"
+
+[project.urls]
+Homepage = "https://github.com/Vikaash-dev/Autoresearch-v2"
+Repository = "https://github.com/Vikaash-dev/Autoresearch-v2"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["autoresearch*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
